@@ -1,0 +1,85 @@
+
+import divingcalculations.DiveValidation;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+/**
+ * Test Validation methods
+ *
+ * @author Gustavo A Guevara Salazar
+ * @version 23/04/2022
+ */
+class DiveValidationTest {
+
+    DiveValidation diveValidation = new DiveValidation();
+
+    @Test
+    void oxyValidation() {
+
+
+        assertTrue(diveValidation.oxyValidation("100"));
+        assertFalse(diveValidation.oxyValidation("101"));
+        assertTrue(diveValidation.oxyValidation("18"));
+        assertFalse(diveValidation.oxyValidation("17"));
+        assertTrue(diveValidation.oxyValidation("55"));
+        assertFalse(diveValidation.oxyValidation("0"));
+    }
+
+    @Test
+    void depthValidation() {
+
+        assertTrue(diveValidation.depthValidation("10"));
+        assertFalse(diveValidation.depthValidation("0"));
+        assertTrue(diveValidation.depthValidation("2"));
+        assertTrue(diveValidation.depthValidation("18"));
+        assertFalse(diveValidation.depthValidation("80"));
+        assertTrue(diveValidation.depthValidation("78"));
+        assertFalse(diveValidation.depthValidation("79"));
+        assertFalse(diveValidation.depthValidation("100"));
+    }
+
+    @Test
+    void validatePartialPressure() {
+
+        assertTrue(diveValidation.validatePartialPressure("1.4"));
+        assertFalse(diveValidation.validatePartialPressure("1.7"));
+        assertFalse(diveValidation.validatePartialPressure("1"));
+        assertTrue(diveValidation.validatePartialPressure("1.6"));
+    }
+
+    @Test
+    void oxyComplexCalculations() {
+        String[] st = {"1", "3"};
+        String[] st2 = {"18", "51"};
+        String[] st3 = {"20", "50"};
+        assertFalse(diveValidation.oxyComplexCalculations(st));
+        assertFalse(diveValidation.oxyComplexCalculations(st2));
+        assertTrue(diveValidation.oxyComplexCalculations(st3));
+    }
+
+    @Test
+    void depthComplexCalculations() {
+
+        String[] st = {"3", "70"};
+        String[] st2 = {"2", "70"};
+        String[] st3 = {"5", "71"};
+        String[] st4 = {"5", "56"};
+
+        assertTrue(diveValidation.depthComplexCalculations(st));
+        assertFalse(diveValidation.depthComplexCalculations(st2));
+        assertFalse(diveValidation.depthComplexCalculations(st3));
+        assertTrue(diveValidation.depthComplexCalculations(st4));
+    }
+
+    @Test
+    void menuValidation() {
+
+        assertTrue(diveValidation.menuValidation("2"));
+        assertFalse(diveValidation.menuValidation("0"));
+        assertTrue(diveValidation.menuValidation("9"));
+        assertFalse(diveValidation.menuValidation("11"));
+        assertFalse(diveValidation.menuValidation("l"));
+    }
+}

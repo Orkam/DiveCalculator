@@ -1,0 +1,625 @@
+package divingcalculations;
+
+import javax.swing.*;
+import javax.swing.border.TitledBorder;
+import java.awt.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Hashtable;
+import java.util.Vector;
+
+
+/**
+ * User interface using Java Swing
+ *
+ * @author Gustavo A Guevara Salazar
+ * @version 30/05/2022
+ */
+public class DiveCalculatorGUI extends JFrame {
+    private JSpinner spinnerPercentageOxygen;
+    private JSpinner spinnerPartialPressure;
+    private JSpinner spinnerDepth;
+    private JSpinner spinnerStartOx;
+    private JSpinner spinnerEndOX;
+    private JTextArea jTextAreaResult;
+    private String selectionRadio;
+    private JSpinner spinnerStartDepth;
+    private JSpinner spinnerEndDepth;
+    private String selectionTable;
+    private int oxStart;
+    private int oxEnd;
+    private String percentageOxygen;
+    private double partialPressure;
+    private String depth;
+    private int depthStarted;
+    private int depthEnded;
+    private String[] columnsName;
+    private int length;
+    private final DiveFormulas diveFormulas;
+    private JSlider sliderOxygen;
+    private JSlider sliderDepth;
+    private JLabel labelOxygenResult;
+    private JLabel labelNitroResult;
+
+
+    /**
+     * Constructor. Initialize all variables and interface components
+     */
+    public DiveCalculatorGUI() {
+        diveFormulas = new DiveFormulas();
+
+        initRadio();
+        initSpinner();
+        initTextArea();
+        initImage();
+        initTabular();
+        initScreen();
+
+    }
+
+    /**
+     * This method handle the components for Complex calculations.
+     */
+    private void initTabular() {
+
+        //Exclusive JPanel for Complex method components.
+        JPanel panelComplexCalc = new JPanel();
+        panelComplexCalc.setLayout(new FlowLayout());
+
+
+        panelComplexCalc.setBorder(BorderFactory.createTitledBorder(null, "Tabular Calculations"
+                , TitledBorder.CENTER, TitledBorder.TOP, new Font("Arial", Font.BOLD, 18), Color.BLACK));
+
+        //Init the Spinners for Complex calculation.
+        //Setting the init value the minimum value, the max value and the step size
+        spinnerStartOx = new JSpinner(new SpinnerNumberModel(18, 18, 50, 1));
+        //The spinner can only be use with its buttons
+        ((JSpinner.DefaultEditor) spinnerStartOx.getEditor()).getTextField().setEditable(false);
+        oxStart = Integer.parseInt(spinnerStartOx.getValue().toString());
+        //Change listener to set the value when is used.
+        spinnerStartOx.addChangeListener(e -> oxStart = Integer.parseInt(spinnerStartOx.getValue().toString()));
+        JLabel labStartOx = new JLabel("Start Oxygen:   ", SwingConstants.LEFT);
+        //Adding the component to the panel
+        panelComplexCalc.add(labStartOx);
+        panelComplexCalc.add(spinnerStartOx);
+        //Init the Spinners for Complex calculation.
+        //Setting the init value the minimum value, the max value and the step size
+        spinnerEndOX = new JSpinner(new SpinnerNumberModel(18, 18, 50, 1));
+        ((JSpinner.DefaultEditor) spinnerEndOX.getEditor()).getTextField().setEditable(false);
+        oxEnd = Integer.parseInt(spinnerEndOX.getValue().toString());
+        spinnerEndOX.addChangeListener(e -> oxEnd = Integer.parseInt(spinnerEndOX.getValue().toString()));
+
+        JLabel labEndOx = new JLabel("   End Oxygen:   ", SwingConstants.LEFT);
+        panelComplexCalc.add(labEndOx);
+        panelComplexCalc.add(spinnerEndOX);
+
+        //Init the Spinners for Complex calculation.
+        //Setting the init value the minimum value, the max value and the step size
+        //The step Size in the spinner increase by 1. In the Table creation is displayed in multiples of 3
+        spinnerStartDepth = new JSpinner(new SpinnerNumberModel(3, 3, 70, 1));
+        //The spinner can only be use with its buttons
+        ((JSpinner.DefaultEditor) spinnerStartDepth.getEditor()).getTextField().setEditable(false);
+        depthStarted = Integer.parseInt(spinnerStartDepth.getValue().toString());
+        //Change listener to set the value when is used.
+        spinnerStartDepth.addChangeListener(e -> depthStarted = Integer.parseInt(spinnerStartDepth.getValue().toString()));
+        JLabel labelStartDepth = new JLabel("Start Depth:   ", SwingConstants.LEFT);
+        //Adding the component to the panel
+        panelComplexCalc.add(labelStartDepth);
+        panelComplexCalc.add(spinnerStartDepth);
+
+        spinnerEndDepth = new JSpinner(new SpinnerNumberModel(3, 3, 70, 1));
+        ((JSpinner.DefaultEditor) spinnerEndDepth.getEditor()).getTextField().setEditable(false);
+        depthEnded = Integer.parseInt(spinnerEndDepth.getValue().toString());
+        //Change listener to set the value when is used.
+        spinnerEndDepth.addChangeListener(e -> depthEnded = Integer.parseInt(spinnerEndDepth.getValue().toString()));
+
+        JLabel labelEndDepth = new JLabel("   End Depth:   ", SwingConstants.LEFT);
+        panelComplexCalc.add(labelEndDepth);
+        panelComplexCalc.add(spinnerEndDepth);
+
+
+        JLabel table = new JLabel("     Which Table:   ", SwingConstants.LEFT);
+        panelComplexCalc.add(table);
+
+        //ButtonGroup. Identifies radio buttons as a group, allowing only one to be selected at a time.
+        ButtonGroup buttonsGroupTable = new ButtonGroup();
+        JRadioButton radioEADTable = new JRadioButton("EAD Table");
+        radioEADTable.setBounds(10, 20, 100, 30);
+        radioEADTable.addActionListener(e -> selectionTable = e.getActionCommand());
+
+        buttonsGroupTable.add(radioEADTable);
+        panelComplexCalc.add(radioEADTable);
+
+        JRadioButton radioPPTable = new JRadioButton("PP Table");
+        radioPPTable.setBounds(10, 20, 100, 30);
+        radioPPTable.addActionListener(e -> selectionTable = e.getActionCommand());
+        //Adding the component to the panel
+        buttonsGroupTable.add(radioPPTable);
+        panelComplexCalc.add(radioPPTable);
+
+        Button createTable = new Button();
+        createTable.setLabel("Create Table");
+
+        //Action Listener to pop up the Table.
+        createTable.addActionListener(e -> {
+
+            if (selectionTable != null) {
+
+                if (oxStart > oxEnd) {
+                    JOptionPane.showMessageDialog(null, "The end Oxygen must be larger than the start Oxygen");
+
+                } else if (depthStarted > depthEnded) {
+                    JOptionPane.showMessageDialog(null, "The end Depth must be larger than the start Depth");
+
+                } else {
+
+                    //process the computation inside a different thread, so the GUI stays responsive.
+                    EventQueue.invokeLater(() -> {
+                        //new Frame for the new window.
+                        JFrame frame;
+
+                        if (selectionTable.equals("PP Table")) {
+                            frame = new JFrame("Partial Pressures Table. Start Oxygen: "
+                                    + oxStart + " End Oxygen: " + oxEnd + " Start Depth: " + depthStarted + " End Depth: " + depthEnded);
+                        } else {
+                            frame = new JFrame("Equivalent Air Depth Table. Start Oxygen: "
+                                    + oxStart + " End Oxygen: " + oxEnd + " Start Depth: " + depthStarted + " End Depth: " + depthEnded);
+                        }
+
+
+                        frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+                        try {
+                            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+                        } catch (Exception e1) {
+                            e1.printStackTrace();
+                        }
+                        JPanel panel = new JPanel();
+                        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+                        panel.setOpaque(true);
+
+                        //Logic to fill an array with the names of the columns (Oxygen Range).
+                        //leave the first column blank for the table(This also means that we need an additional position)
+                        length = oxEnd - oxStart;
+                        length += 1;
+                        columnsName = new String[length + 1];
+                        columnsName[0] = "";
+                        columnsName[1] = String.valueOf(oxStart);
+                        if (length >= 1) {
+                            for (int i = 2; i <= length; i++) {
+
+                                int number = oxStart + (i - 1);
+                                columnsName[i] = String.valueOf(number);
+                            }
+                        }
+
+                        //The use of raw data should be avoided in most contexts.
+                        //However, JTable does support filling the table with vectors
+                        // and can be used without problems in this case.
+                        Vector columnNamesV = new Vector(Arrays.asList(columnsName));
+
+                        // rowData Vector is going to contain the result of the Calculation and the
+                        //Range of the Depth for the first cell.
+                        Vector rowData = new Vector();
+                        ArrayList<String> arrayRangeDepth = new ArrayList<>();
+                        ArrayList<String> arrayCalculation = new ArrayList<>();
+
+                        for (int i = 0; i <= depthEnded - depthStarted; i += 3) {
+                            int number = depthStarted + i;
+                            //arrayRangeDepth is used to add the Range for the Depth.
+                            arrayRangeDepth.add(String.valueOf(number));
+                        }
+
+
+                        for (String arrayList1 : arrayRangeDepth) {
+                            //each row contains, for the first cell the number of the depth and from then on the calculations
+                            //Adding first the depth value.
+                            arrayCalculation.add(arrayList1);
+                            for (int i = 1; i < columnsName.length; i++) {
+                                if (selectionTable.equals("PP Table")) {
+                                    double partialPressure = diveFormulas.partialPressure(Double.parseDouble(arrayList1), Integer.parseInt(columnsName[i]));
+                                    if (partialPressure <= 1.6) {
+                                        arrayCalculation.add(String.valueOf(partialPressure));
+                                    }
+                                } else {
+                                    int equAirDepth = diveFormulas.equivalentAirDepth(Double.parseDouble(arrayList1), Integer.parseInt(columnsName[i]));
+                                    //I can't dive to -2m.
+                                    if (equAirDepth >= 0) {
+                                        arrayCalculation.add(String.valueOf(equAirDepth));
+                                    }
+                                }
+                            }
+                            //Every time the inner for finishes iterating we already have a row that we can add to our vector
+                            Vector echRow = new Vector(arrayCalculation);
+                            rowData.add(echRow);
+                            //The list must be restarted so that the data is not duplicated when performing the next iteration
+                            arrayCalculation = new ArrayList<>();
+
+                        }
+
+                        //Populating the table
+                        JTable jTable = new JTable(rowData, columnNamesV);
+
+                        //Scroller for the Table. Vertical and Horizontal
+                        JScrollPane scroller = new JScrollPane(jTable);
+
+                        jTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+                        scroller.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
+                        scroller.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS);
+                        panel.add(scroller);
+                        frame.getContentPane().add(BorderLayout.CENTER, panel);
+                        frame.pack();
+                        frame.setSize(800, 250);
+                        frame.setLocationByPlatform(true);
+                        frame.setVisible(true);
+                        frame.setResizable(false);
+
+
+                    });
+
+                }
+            } else {
+                JOptionPane.showMessageDialog(null, "Please select witch table");
+            }
+        });
+
+        //Adding the component to the panel
+        panelComplexCalc.add(createTable);
+        //Adding the panel to the Frame
+        add(panelComplexCalc);
+
+
+    }
+
+    /**
+     * Method the handle Image Panel.
+     */
+    private void initImage() {
+
+        //Exclusive panel for Image Components with the Slides.
+        JPanel panelCylinder = new JPanel();
+        panelCylinder.setLayout(new FlowLayout());
+
+        //Setting the slider with the range(minimum number and max number)
+        // and setting the initial value
+        sliderOxygen = new JSlider(JSlider.VERTICAL, 18, 100, 18);
+        sliderOxygen.setPaintTicks(true);
+        sliderOxygen.setPaintLabels(true);
+        sliderOxygen.setMinorTickSpacing(5);
+        sliderOxygen.setMajorTickSpacing(10);
+        //User cannot manipulate the slider. It moves according the results of
+        //the calculations.
+        sliderOxygen.setEnabled(false);
+        //Using the last Value to put a label(title) for the  Slider.
+        //This does not affect the value.
+        Hashtable<Integer, JLabel> labelSlideOxygen = new Hashtable<>();
+        labelSlideOxygen.put(100, new JLabel("%O2"));
+        labelSlideOxygen.put(88, new JLabel("88"));
+        labelSlideOxygen.put(78, new JLabel("78"));
+        labelSlideOxygen.put(68, new JLabel("68"));
+        labelSlideOxygen.put(58, new JLabel("58"));
+        labelSlideOxygen.put(48, new JLabel("48"));
+        labelSlideOxygen.put(38, new JLabel("38"));
+        labelSlideOxygen.put(28, new JLabel("28"));
+        labelSlideOxygen.put(18, new JLabel("18"));
+        sliderOxygen.setLabelTable(labelSlideOxygen);
+
+
+        panelCylinder.add(sliderOxygen);
+
+        labelOxygenResult = new JLabel();
+        labelOxygenResult.setText(percentageOxygen);
+        labelOxygenResult.setFont(new Font("Arial", Font.BOLD, 24));
+        JLabel labelOxygen = new JLabel("%O2");
+        labelOxygen.setFont(new Font("Arial", Font.BOLD, 24));
+        panelCylinder.add(labelOxygenResult);
+        panelCylinder.add(labelOxygen);
+        //Importing Image
+        ImageIcon cylinder = new ImageIcon(new ImageIcon("src/images/cylinder.png").getImage().getScaledInstance(250, 250, Image.SCALE_DEFAULT));
+        JLabel imageLabel = new JLabel(cylinder);
+
+
+        panelCylinder.add(imageLabel);
+
+        labelNitroResult = new JLabel();
+        //The tank is composed of nitrogen and oxygen. Having the value of oxygen we can calculate the nitrogen
+        labelNitroResult.setText(String.valueOf(100 - Integer.parseInt(percentageOxygen)));
+        labelNitroResult.setFont(new Font("Arial", Font.BOLD, 24));
+        JLabel labelNitro = new JLabel("%N2");
+        labelNitro.setFont(new Font("Arial", Font.BOLD, 24));
+
+        panelCylinder.add(labelNitroResult);
+        panelCylinder.add(labelNitro);
+
+        sliderDepth = new JSlider(JSlider.VERTICAL, 1, 78, 1);
+        sliderDepth.setPaintTicks(true);
+        sliderDepth.setPaintLabels(true);
+        sliderDepth.setMinorTickSpacing(5);
+        sliderDepth.setMajorTickSpacing(10);
+        //User cannot manipulate the slider. It moves according the results of
+        //the calculations.
+        sliderDepth.setEnabled(false);
+        //Using the last Value to put a label(title) for the  Slider.
+        //This does not affect the value.
+        Hashtable<Integer, JLabel> labelSlideDepth = new Hashtable<>();
+        labelSlideDepth.put(78, new JLabel("Depth(m)"));
+        labelSlideDepth.put(70, new JLabel("70"));
+        labelSlideDepth.put(60, new JLabel("60"));
+        labelSlideDepth.put(50, new JLabel("50"));
+        labelSlideDepth.put(40, new JLabel("40"));
+        labelSlideDepth.put(30, new JLabel("30"));
+        labelSlideDepth.put(20, new JLabel("20"));
+        labelSlideDepth.put(10, new JLabel("10"));
+
+
+        sliderDepth.setLabelTable(labelSlideDepth);
+        panelCylinder.add(sliderDepth);
+        add(panelCylinder);
+
+
+    }
+
+    /**
+     * Method to Init and handle Text Area component
+     * and the Button to do the Standard Calculations     *
+     */
+    private void initTextArea() {
+
+        JPanel panelAnswer = new JPanel();
+        BoxLayout dsf = new BoxLayout(panelAnswer, BoxLayout.Y_AXIS);
+        panelAnswer.setLayout(dsf);
+        jTextAreaResult = new JTextArea(10, 22);
+        Button doCalculation = new Button();
+        doCalculation.setLabel("Do Calculation");
+        //User cannot write on it
+        jTextAreaResult.setEditable(false);
+        //The text is wrap. Adapt the text to component JTextArea size
+        jTextAreaResult.setLineWrap(true);
+        jTextAreaResult.setWrapStyleWord(true);
+        doCalculation.addActionListener(e -> {
+
+            if (selectionRadio != null) {
+                //Switch case for the Standard calculations.
+                switch (selectionRadio) {
+
+                    case "Maximum Operating Depth" -> {
+                        int mod = diveFormulas.mod(Integer.parseInt(percentageOxygen), partialPressure);
+                        //Setting the result in the JTextArea
+                        jTextAreaResult.setText("Maximum operating depth (MOD) for a dive with " + percentageOxygen + "% " +
+                                "O2 and a partial pressure of " + String.format("%.1f", partialPressure) + " is " + mod + " metres");
+                        //Change the Labels and the Sliders values in the Image JPanel, according to the calculation results.
+                        sliderDepth.setValue(Integer.parseInt(String.valueOf(mod)));
+                    }
+                    case "Standard Maximum Operating Depth" -> {
+
+                        int mod = diveFormulas.mod(Integer.parseInt(percentageOxygen), 1.4);
+                        //Setting the result in the JTextArea
+                        jTextAreaResult.setText("Maximum operating depth (MOD) for a dive with " + percentageOxygen + "% " +
+                                "O2 and a partial pressure of " + "1.4" + " is " + mod + " metres");
+                        //Change the Labels and the Sliders values in the Image JPanel, according to the calculation results.
+                        sliderDepth.setValue(Integer.parseInt(String.valueOf(mod)));
+                    }
+
+                    case "Best Mix" -> {
+
+                        int bestMix = diveFormulas.BestMix(Double.parseDouble(depth), partialPressure);
+                        //Setting the result in the JTextArea
+                        jTextAreaResult.setText("Best mix for a dive to " + depth + " metres with a partial pressure of " +
+                                String.format("%.1f", partialPressure) + " is " + bestMix + "% O2");
+                        //Change the Labels and the Sliders values in the Image JPanel, according to the calculation results.
+                        labelOxygenResult.setText(String.valueOf(bestMix));
+                        labelNitroResult.setText(String.valueOf(100 - bestMix));
+                        sliderOxygen.setValue(Integer.parseInt(percentageOxygen));
+                        sliderDepth.setValue(Integer.parseInt(depth));
+
+                    }
+
+                    case "Partial Pressure" -> {
+
+                        partialPressure = diveFormulas.partialPressure(Double.parseDouble(depth), Integer.parseInt(percentageOxygen));
+
+                        if (partialPressure > 1.6) {
+
+                            //Setting the result in the JTextArea
+                            jTextAreaResult.setText(" WARNING!. The partial pressure of Oxygen for a dive to " + depth + " metres with a percentage of Oxygen of " +
+                                    percentageOxygen + "% is " + partialPressure + " ata." + " Safety levels is in the range 1.1 ata to 1.6 ata!");
+                        } else {
+                            //Setting the result in the JTextArea
+                            jTextAreaResult.setText("The partial pressure of Oxygen for a dive to " + depth + " metres with a percentage of Oxygen of " +
+                                    percentageOxygen + "% is " + partialPressure + " ata");
+
+                        }
+
+
+                    }
+
+                    case "Equivalent Air Depth" -> {
+
+                        int equAirDepth = diveFormulas.equivalentAirDepth(Double.parseDouble(depth), Integer.parseInt(percentageOxygen));
+                        if (equAirDepth < 0) {
+
+                            //Setting the result in the JTextArea
+                            jTextAreaResult.setText("Unsafe result for Equivalent Air Depth");
+
+                        } else {
+
+                            //Setting the result in the JTextArea
+                            jTextAreaResult.setText("Equivalent Air Depth for a dive with " + percentageOxygen + "% O2 to a depth of " +
+                                    depth + " metres is " + equAirDepth + " metres");
+                        }
+
+                    }
+                }
+
+
+            } else {
+                JOptionPane.showMessageDialog(null, "Select type of calculation");
+            }
+
+
+        });
+
+        panelAnswer.add(jTextAreaResult);
+        panelAnswer.add(doCalculation);
+        add(panelAnswer);
+    }
+
+    /**
+     * Init Spinners for Standard Calculations
+     */
+    private void initSpinner() {
+        //Exclusive panel for the Spinners
+        JPanel panelOptionsStandard = new JPanel();
+        //Setting Spinners. Initial value, min and max value an the step value.
+        spinnerPercentageOxygen = new JSpinner(new SpinnerNumberModel(18, 18, 100, 1));
+        //Spinners can be used only with the buttons.
+        ((JSpinner.DefaultEditor) spinnerPercentageOxygen.getEditor()).getTextField().setEditable(false);
+        percentageOxygen = spinnerPercentageOxygen.getValue().toString();
+        //Change Listener
+        spinnerPercentageOxygen.addChangeListener(e -> {
+                    //Setting the value every time that the Spinner is used and Showing immediately the new values of the Sliders and labels
+                    //in Image Panel.
+                    percentageOxygen = spinnerPercentageOxygen.getValue().toString();
+                    sliderOxygen.setValue(Integer.parseInt(percentageOxygen));
+                    labelOxygenResult.setText(percentageOxygen);
+                    labelNitroResult.setText(String.valueOf(100 - Integer.parseInt(percentageOxygen)));
+                }
+        );
+        //Setting Spinners. Initial value, min and max value an the step value.
+        //The min value is set 1.01 in the code for Spinner to show 1.1 in the interface and I can raise and lower the value returning to
+        //the min value 1.1. If the 1.1 is set directly in the code, when I raise and lower the value, I cannot returning to 1.1. It Stays en 1.2.
+        spinnerPartialPressure = new JSpinner(new SpinnerNumberModel(1.1, 1.01, 1.6, 0.1));
+        ((JSpinner.DefaultEditor) spinnerPartialPressure.getEditor()).getTextField().setEditable(false);
+        partialPressure = (double) spinnerPartialPressure.getValue();
+        spinnerPartialPressure.addChangeListener(e -> partialPressure = (double) spinnerPartialPressure.getValue());
+
+        spinnerDepth = new JSpinner(new SpinnerNumberModel(1, 1, 78, 1));
+        ((JSpinner.DefaultEditor) spinnerDepth.getEditor()).getTextField().setEditable(false);
+        depth = spinnerDepth.getValue().toString();
+        spinnerDepth.addChangeListener(e -> {
+            //Setting the value every time that the Spinner is used and Showing immediately the new values of the Sliders and labels
+            //in Image Panel.
+            depth = spinnerDepth.getValue().toString();
+            sliderDepth.setValue(Integer.parseInt(depth));
+        });
+
+        panelOptionsStandard.setBorder(BorderFactory.createTitledBorder("Variables"));
+        BoxLayout layoutOptionStandard = new BoxLayout(panelOptionsStandard, BoxLayout.Y_AXIS);
+
+        panelOptionsStandard.setLayout(layoutOptionStandard);
+        JLabel labelOxy = new JLabel("Percentage Oxygen:", SwingConstants.LEFT);
+        panelOptionsStandard.add(labelOxy);
+        panelOptionsStandard.add(spinnerPercentageOxygen);
+
+
+        JLabel labelPP = new JLabel("Partial pressure:", SwingConstants.LEFT);
+        panelOptionsStandard.add(labelPP);
+        panelOptionsStandard.add(spinnerPartialPressure);
+
+        JLabel labelDepth = new JLabel("Depth(metres):");
+        panelOptionsStandard.add(labelDepth);
+        panelOptionsStandard.add(spinnerDepth);
+
+
+        add(panelOptionsStandard);
+    }
+
+    /**
+     *
+     */
+    private void initRadio() {
+        JPanel panelRadio = new JPanel();
+        panelRadio.setBorder(BorderFactory.createTitledBorder(null, "Standard Calculations", TitledBorder.CENTER,
+                TitledBorder.TOP, new Font("Arial", Font.BOLD, 18), Color.BLACK));
+
+        //BoxLayout shows the components in a box and Y_Axis Shows the Components Vertical position
+        BoxLayout layout = new BoxLayout(panelRadio, BoxLayout.Y_AXIS);
+        panelRadio.setLayout(layout);
+        //ButtonGroup. Identifies radio buttons as a group, allowing only one to be selected at a time.
+        ButtonGroup buttonsGroup = new ButtonGroup();
+        JRadioButton radioMaximumOperatingDepth = new JRadioButton("Maximum Operating Depth");
+        radioMaximumOperatingDepth.setBounds(10, 20, 100, 30);
+
+        radioMaximumOperatingDepth.addActionListener(e -> {
+
+            //Make sure to only has enable the Radio component that the Calculation needs.
+            //Others are going to be disable.
+            selectionRadio = e.getActionCommand();
+            spinnerPartialPressure.setEnabled(true);
+            spinnerPercentageOxygen.setEnabled(true);
+            spinnerDepth.setEnabled(false);
+        });
+
+        panelRadio.add(radioMaximumOperatingDepth);
+        buttonsGroup.add(radioMaximumOperatingDepth);
+
+        JRadioButton radioStandardMaximumOperatingDepth = new JRadioButton("Standard Maximum Operating Depth");
+        radioStandardMaximumOperatingDepth.setBounds(10, 70, 100, 30);
+        radioStandardMaximumOperatingDepth.addActionListener(e -> {
+            selectionRadio = e.getActionCommand();
+            spinnerPartialPressure.setEnabled(false);
+            spinnerPercentageOxygen.setEnabled(true);
+            spinnerDepth.setEnabled(false);
+
+
+        });
+
+        panelRadio.add(radioStandardMaximumOperatingDepth);
+        buttonsGroup.add(radioStandardMaximumOperatingDepth);
+
+        JRadioButton radioBestMix = new JRadioButton("Best Mix");
+        radioBestMix.setBounds(10, 120, 100, 30);
+        radioBestMix.addActionListener(e -> {
+            selectionRadio = e.getActionCommand();
+            spinnerPartialPressure.setEnabled(true);
+            spinnerPercentageOxygen.setEnabled(false);
+            spinnerDepth.setEnabled(true);
+
+        });
+        panelRadio.add(radioBestMix);
+        buttonsGroup.add(radioBestMix);
+
+        JRadioButton radioPartialPressure = new JRadioButton("Partial Pressure");
+        radioPartialPressure.setBounds(10, 120, 100, 30);
+        radioPartialPressure.addActionListener(e -> {
+            selectionRadio = e.getActionCommand();
+            spinnerPartialPressure.setEnabled(false);
+            spinnerPercentageOxygen.setEnabled(true);
+            spinnerDepth.setEnabled(true);
+
+        });
+        panelRadio.add(radioPartialPressure);
+        buttonsGroup.add(radioPartialPressure);
+
+
+        JRadioButton radioEquivalentAirDepth = new JRadioButton("Equivalent Air Depth");
+        radioEquivalentAirDepth.setBounds(10, 120, 100, 30);
+        radioEquivalentAirDepth.addActionListener(e -> {
+            selectionRadio = e.getActionCommand();
+            spinnerPartialPressure.setEnabled(false);
+            spinnerPercentageOxygen.setEnabled(true);
+            spinnerDepth.setEnabled(true);
+
+        });
+        panelRadio.add(radioEquivalentAirDepth);
+        buttonsGroup.add(radioEquivalentAirDepth);
+
+        add(panelRadio);
+    }
+
+    /**
+     * Setting Components for the JFrame
+     */
+    private void initScreen() {
+
+        setLayout(new FlowLayout());
+        setTitle("Diving Calculations");
+        setSize(1300, 400);
+        setResizable(false);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setVisible(true);
+
+
+    }
+
+
+}
